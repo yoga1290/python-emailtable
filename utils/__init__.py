@@ -4,8 +4,8 @@ def processInbox(
     USERNAME= os.getenv('USERNAME', 'USERNAME-REQUIRED@gmail.com'),
     APP_PASSWORD= os.getenv('APP_PASSWORD', 'APP-PASSWORD'),
     IMAP_SERVER= os.getenv('IMAP_SERVER', 'imap.gmail.com'),
-    IMAP_PORT= os.getenv('IMAP_PORT', 25),
-
+    IMAP_PORT= os.getenv('IMAP_PORT', 993),
+    MAILBOX= os.getenv('MAILBOX', 'INBOX'),
     N_COUNT= os.getenv('N_COUNT', '5'),
 
     FROM_EMAIL=os.getenv('FROM_EMAIL', None), # example: '<username>+<filter>@gmail.com'
@@ -18,7 +18,8 @@ def processInbox(
 
     if OUTPUT_DIR:
         data = connect_imap.connectIMAP(USERNAME, APP_PASSWORD, IMAP_SERVER,
-                                # imap_port=IMAP_PORT,
+                                imap_port=IMAP_PORT,
+                                mailbox=MAILBOX,
                                 most_recent_messages_count=int(N_COUNT),
                                 subject=None,
                                 fromEmail=FROM_EMAIL,

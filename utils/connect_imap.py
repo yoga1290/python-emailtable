@@ -1,4 +1,4 @@
-def connectIMAP(username, password, imap_server, imap_port=None, most_recent_messages_count=2, subject=None, fromEmail=None, toEmail=None, OUTPUT_DIR='.'):
+def connectIMAP(username, password, imap_server, imap_port=None, mailbox="INBOX", most_recent_messages_count=2, subject=None, fromEmail=None, toEmail=None, OUTPUT_DIR='.'):
     
     import imaplib
     import email
@@ -17,7 +17,7 @@ def connectIMAP(username, password, imap_server, imap_port=None, most_recent_mes
     # authenticate
     imap.login(username, password)
     
-    status, messages = imap.select("INBOX")
+    status, messages = imap.select(mailbox)
     
     # number of top emails to fetch
     N = most_recent_messages_count
