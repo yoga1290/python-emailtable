@@ -7,7 +7,7 @@ def messageHandler(responseMsg, OUTPUT_DIR='.'):
     
     response = responseMsg
 
-    msgId, msgDate, From, subject, files = None, None, None, None, []
+    msgId, msgRef, msgDate, From, subject, files = None, None, None, None, None, []
 
     def clean(msgDate, text):
         # clean text for creating a folder
@@ -70,6 +70,7 @@ def messageHandler(responseMsg, OUTPUT_DIR='.'):
         # print("Subject:", subject)
         # print("From:", From)
         msgId = msg.get('Message-ID')
+        msgRef = msg.get("References", "")
         
         # if the email message is multipart
         if msg.is_multipart():
@@ -95,19 +96,6 @@ def messageHandler(responseMsg, OUTPUT_DIR='.'):
                     partCount = partCount + 1
                     # print(f'has attachment: {filename}')
                     if filename:
-                        # folder_name = clean(msgDate, subject)
-                        # folder_name = OUTPUT_DIR + "/attachments/" +  clean('', subject) #TODO
-                        # if not os.path.isdir(folder_name):
-                        #     # make a folder for this email (named after the subject)
-                        #     os.makedirs(folder_name)
-                        # filepath = os.path.join(folder_name, filename)
-                        # # download attachment and save it
-                        # # open(filepath, "wb").write(part.get_payload(decode=True))
-                        # try:
-                        #     open(filepath, "wb").write(part.get_payload(decode=True))
-                        # except Exception as ex:
-                        #     filepath = f'ERROR1 {ex}'
-                        # files.append(filepath)
                         processMessage(OUTPUT_DIR=OUTPUT_DIR, msgDate=msgDate, subject=subject, files=files, file_content=part.get_payload(decode=True), filename=clean(f'{msgDate}-{partCount}', filename), content_type=content_type)
 
                         
@@ -117,21 +105,6 @@ def messageHandler(responseMsg, OUTPUT_DIR='.'):
             # get the email body
             body = msg.get_payload(decode=True).decode()
             if content_type == "text/plain":
-                # print only text email parts
-                # print(body)
-                # if it's HTML, create a new HTML file and open it in browser
-                # folder_name = OUTPUT_DIR + "/attachments/" + clean('', subject)
-                # if not os.path.isdir(folder_name):
-                #     # make a folder for this email (named after the subject)
-                #     os.makedirs(folder_name)
-                # filename = clean(msgDate, "index") + '.txt';
-                # filepath = os.path.join(folder_name, filename)
-                # # write the file
-                # try:
-                #     open(filepath, "w").write(body)
-                # except Exception as ex:
-                #     filepath = f'ERROR2 {ex}'
-                # files.append(filepath)
                 processMessage(OUTPUT_DIR=OUTPUT_DIR, msgDate=msgDate, subject=subject, files=files, file_content=body, filename=None, content_type=content_type)
 
                 
@@ -149,4 +122,111 @@ def messageHandler(responseMsg, OUTPUT_DIR='.'):
         # print(f'files:{files}')
         # print('=======================')
         
-        return {'msgId':msgId, 'date':msgDate, 'from': From, 'subject': subject, 'files': files }
+        return {'msgId':msgId,
+                'msgRef': msgRef,
+                'date':msgDate,
+                'from': From,
+                'subject': subject,
+                'files': files }
+
+
+def processIMAPToCSV(
+        username,
+        password,
+        imap_server,
+        imap_port=None,
+        mailbox="INBOX",
+        most_recent_messages_count=2,
+        subject=None,
+        fromEmail=None,
+        toEmail=None,
+        OUTPUT_DIR='.',
+        IMAP_CSV_COL_MESSAGE_ID='msgId',
+        IMAP_CSV_COL_MESSAGE_REF='msgRef',
+        IMAP_CSV_COL_DATE='date',
+        IMAP_CSV_COL_FROM='from',
+        IMAP_CSV_COL_SUBJECT='subject',
+        IMAP_CSV_COL_ATTACHMENT_PATH='attachment',
+        ):
+    
+    import imaplib
+    import email
+    from email.header import decode_header
+    # import webbrowser
+    import os
+    
+    # create an IMAP4 class with SSL 
+    if imap_port:
+        imap = imaplib.IMAP4_SSL(imap_server, imap_port)
+    else:
+        imap = imaplib.IMAP4_SSL(imap_server)
+    # authenticate
+    imap.login(username, password)
+    
+    status, messages = imap.select(mailbox)
+    
+    # number of top emails to fetch
+    N = most_recent_messages_count
+        
+    # total number of emails
+    messages = int(messages[0])
+
+    # see https://stackoverflow.com/a/2230571
+    # see https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.search
+    hasNoQuery = subject is None and fromEmail is None and toEmail is None
+    messageIds = []
+    criterion=[]
+    if subject:
+        criterion.append('SUBJECT "%s"' % subject)
+        # typ, data = imap.search(None,'(SUBJECT "%s")' % subject)
+        # messageIds.extend(data[0].split())
+        # print('messageIds (subject)', messageIds)
+    if fromEmail:
+        criterion.append('FROM "%s"' % fromEmail)
+        # typ, data = imap.search(None,'(FROM "%s")' % fromEmail)
+        # messageIds.extend(data[0].split())
+        # print('messageIds (domain)', messageIds)
+    if toEmail:
+        criterion.append('TO "%s"' % toEmail)
+        # typ, data = imap.search(None,'(TO "%s")' % toEmail)
+        # messageIds.extend(data[0].split())
+        # print('messageIds (domain)', messageIds)
+    if hasNoQuery:
+        messageIds = [str(i) for i in range(messages, messages-N, -1)]
+    else:
+        typ, data = imap.search(None, f'({' '.join(criterion)})')
+        messageIds.extend(data[0].split())
+
+    msgIds, msgRefs, datesSent, FromEmails, files, subjects = [], [], [], [], [], []
+    
+    for i in messageIds:
+        # fetch the email message by ID
+        # res, msg = imap.fetch(str(i), "(RFC822)")
+        res, msg = imap.fetch(i, "(RFC822)")
+        for response in msg:
+            try:
+                messageHandlerData = messageHandler(response, OUTPUT_DIR)
+                
+                
+                if messageHandlerData:
+                    msgId, msgRef, From, subject, attachmentFilepaths, dateSent = messageHandlerData['msgId'], messageHandlerData['msgRef'], messageHandlerData['from'], messageHandlerData['subject'], messageHandlerData['files'], messageHandlerData['date']
+
+                    
+                    for filepath in attachmentFilepaths:
+                        FromEmails.append(From)
+                        subjects.append(subject)
+                        files.append(filepath)
+                        datesSent.append(dateSent)
+                        msgIds.append(msgId)
+                        msgRefs.append(msgRef)
+            except Exception as e:
+                print(f'Error: msgId: {i}. Exception: {e}')
+    # close the connection and logout
+    imap.close()
+    imap.logout()
+    return {f'{IMAP_CSV_COL_MESSAGE_ID}':msgIds,
+            f'{IMAP_CSV_COL_MESSAGE_REF}':msgRefs,
+            f'{IMAP_CSV_COL_DATE}':datesSent,
+            f'{IMAP_CSV_COL_FROM}': FromEmails,
+            f'{IMAP_CSV_COL_SUBJECT}': subjects,
+            f'{IMAP_CSV_COL_ATTACHMENT_PATH}': files }

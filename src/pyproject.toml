@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yoga1290.emailtable"
+readme = "readme.md"
+version = "0.1.0"
+description = "Pulls and sends emails (IMAP & SMTP) and outputs CSV table and text files."
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["./"]
+
+[project.urls]
+Homepage = "https://github.com/yoga1290/emailtable"
+Issues = "https://github.com/yoga1290/emailtable/issues"
