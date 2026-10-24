@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "yoga1290.emailtable"
 readme = "readme.md"
-version = "0.1.0"
-description = "Pulls and sends emails (IMAP & SMTP) and outputs CSV table and text files."
+version = "0.1.1"
+description = "Pulls, drafts and sends emails (IMAP & SMTP) based on CSV tables"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]
 where = ["./"]
 
 [project.urls]
-Homepage = "https://github.com/yoga1290/emailtable"
-Issues = "https://github.com/yoga1290/emailtable/issues"
+Homepage = "https://github.com/yoga1290/python-emailtable#readme"
+Issues = "https://github.com/yoga1290/python-emailtable/issues"

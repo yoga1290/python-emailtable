@@ -13,7 +13,7 @@
 # https://www.cyberciti.biz/faq/linux-unix-shell-programming-converting-lowercase-uppercase/
 REPO=$(echo "${GIT_REPOSITORY_NAME}" | tr '[:upper:]' '[:lower:]')
 
-IMAGE_NAME=$( echo "${REPO}" | sed -e "s/.*\///g" )
+IMAGE_NAME=${REPO} # $( echo "${REPO}" | sed -e "s/.*\///g" )
 # TAG=$(date +%y.%m).$(git tag -l | wc -l)
 TAG=$(date +%y.%m)
 DOCKER_TAG="$IMAGE_NAME:$TAG"
