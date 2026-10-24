@@ -13,15 +13,29 @@ services:
   emailtable:
     env_file:
       - .env
-    image: python:3.12-slim
+    image: ghcr.io/yoga1290/python-emailtable:26.10
     working_dir: /app
     volumes:
       - .:/app
     command:
-      - pip install yoga1290.emailtable && python
+      - python
       - -c
       - |
-        from yoga1290.email2csv import proccessCSVDrafts
-        from yoga1290.email2csv import processIMAPToCSV
-        from yoga1290.email2csv import processSMTP
-        # ....
+        from yoga1290.emailtable import (
+                        proccessCSVDrafts,
+                        processIMAPToCSV,
+                        processSMTP )
+        # proccessCSVDrafts() #....
+
+  build-and-push-docker-image:
+    image: docker:29-dind
+    environment:
+      GITHUB_REPOSITORY_OWNER: yoga1290
+      GIT_REPOSITORY_NAME: python-emailtable
+      DOCKER_FILE: ./ci/docker-emailtable/Dockerfile
+      ACCESS_TOKEN: ${GITHUB_TOKEN}
+    command: /bin/sh +x ./ci/publish-docker-image-to-container-registry/publish-docker-image-to-container-registry.sh
+    working_dir: /usr/app
+    volumes:
+      - ./:/usr/app
+      - /var/run/docker.sock:/var/run/docker.sock
