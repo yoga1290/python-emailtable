@@ -5,9 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "yoga1290.emailtable"
 readme = "readme.md"
-version = "0.1.1"
+version = "0.1.10"
 description = "Pulls, drafts and sends emails (IMAP & SMTP) based on CSV tables"
 requires-python = ">=3.11"
+dependencies = [
+  "pandas==3.1.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["./"]
